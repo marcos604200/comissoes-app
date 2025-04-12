@@ -21,7 +21,7 @@ export default function ConstrutorRegras() {
     "cont.se", "cont.ses", "indice_corresp", "procv", "procx"
   ];
 
-  const atualizarColaborador = (index, campo, valor) => {
+  const atualizarColaborador = (index: number, campo: string, valor: any) => {
     const atualizado = [...colaboradores];
     atualizado[index][campo] = valor;
     setColaboradores(atualizado);
