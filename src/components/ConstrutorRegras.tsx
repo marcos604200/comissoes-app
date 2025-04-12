@@ -91,7 +91,7 @@ export default function ConstrutorRegras() {
 
   const buscarRegras = async () => {
     const { data } = await supabase.from("regras_comissao").select("id, regra_json").order("id", { ascending: false });
-    setRegrasSalvas(data);
+    setRegrasSalvas(data ?? []);
   };
 
   const excluirRegra = async (id) => {
