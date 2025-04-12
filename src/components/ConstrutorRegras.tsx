@@ -10,7 +10,7 @@ export default function ConstrutorRegras() {
   const [colaboradores, setColaboradores] = useState([
     { nome: "", tiposReceita: [{ tipo: "", percentual: 0 }] }
   ]);
-  const [funcoesExtras, setFuncoesExtras] = useState([]);
+  const [funcoesExtras, setFuncoesExtras] = useState<string[]>([]);
   const [simular, setSimular] = useState(false);
   const [resultadoSimulacao, setResultadoSimulacao] = useState(null);
   const [regrasSalvas, setRegrasSalvas] = useState([]);
