@@ -27,16 +27,18 @@ export function executarRegraExcelAvancada(
     }
   }
 
-  // Aplica funções extras se existirem
+  // Aplica funções extras
   if (regra.funcoes_extra?.length) {
     for (const func of regra.funcoes_extra) {
       switch (func) {
         case "media":
           total = total / regra.dependencias.length;
           break;
+
         case "potencia":
           total = total ** 2;
           break;
+
         case "desvio":
           const valores: number[] = [];
           for (const d of regra.dependencias) {
@@ -49,6 +51,7 @@ export function executarRegraExcelAvancada(
           const variancia = valores.reduce((sum, v) => sum + (v - media) ** 2, 0) / valores.length;
           total = Math.sqrt(variancia);
           break;
+
         case "minmax":
           const valoresMM: number[] = [];
           for (const d of regra.dependencias) {
@@ -59,6 +62,45 @@ export function executarRegraExcelAvancada(
           }
           total = Math.max(...valoresMM) + Math.min(...valoresMM);
           break;
+
+        case "se":
+          if (total > 10000) {
+            total = total * 1.1;
+          }
+          break;
+
+        case "ses":
+          if (total > 20000 && regra.destinatario.startsWith("g")) {
+            total = total * 1.2;
+          }
+          break;
+
+        case "somase":
+          total = 0;
+          for (const d of regra.dependencias) {
+            for (const [tipo, perc] of Object.entries(d.porcentagens)) {
+              if (tipo.includes("frete")) {
+                const valor = (dados[d.colaborador]?.[tipo] || 0) * perc / 100;
+                total += valor;
+              }
+            }
+          }
+          break;
+
+        case "somases":
+          total = 0;
+          for (const d of regra.dependencias) {
+            if (d.colaborador.startsWith("a")) {
+              for (const [tipo, perc] of Object.entries(d.porcentagens)) {
+                if (tipo.includes("armazenagem")) {
+                  const valor = (dados[d.colaborador]?.[tipo] || 0) * perc / 100;
+                  total += valor;
+                }
+              }
+            }
+          }
+          break;
+
         default:
           break;
       }
