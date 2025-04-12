@@ -1,5 +1,8 @@
+type ResultadoSimulacaoProps = {
+  resultado: any; // Você pode substituir 'any' por um tipo mais específico se quiser
+};
 
-export default function ResultadoSimulacao({ resultado }) {
+export default function ResultadoSimulacao({ resultado }: ResultadoSimulacaoProps) {
   return (
     <div>
       <h4 className="font-bold mt-4">🧪 Resultado da Simulação</h4>
@@ -9,4 +12,3 @@ export default function ResultadoSimulacao({ resultado }) {
     </div>
   );
 }
-
