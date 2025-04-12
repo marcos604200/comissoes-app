@@ -3,15 +3,12 @@ import { executarRegraDependente } from "./motorComissaoDependente";
 import { executarRegraDependenteAvancada } from "./motorComissaoDependenteAvancado";
 import { executarRegraExcelAvancada } from "./motorComissaoExcelAvancado";
 
-type RegraComissao = {
-  tipo: string;
-  [chave: string]: any;
-};
+// NÃO precisa importar tipos específicos com muitas linhas
 
-export function calcularComissaoCentral(dados: any, regra: RegraComissao) {
+export function calcularComissaoCentral(dados: any, regra: any) {
   switch (regra.tipo) {
     case "comissao_dependente_excel":
-      return executarRegraExcelAvancada(dados, regra);
+      return executarRegraExcelAvancada(dados, regra); // ← aceita regra como 'any'
     case "comissao_dependente_avancada":
       return executarRegraDependenteAvancada(dados, regra);
     case "comissao_dependente":
