@@ -34,11 +34,16 @@ export default function ConstrutorRegras() {
   setColaboradores(atualizado);
 };
 
-  const atualizarTipoReceita = (colabIndex, tipoIndex, campo, valor) => {
-    const atualizado = [...colaboradores];
-    atualizado[colabIndex].tiposReceita[tipoIndex][campo] = valor;
-    setColaboradores(atualizado);
-  };
+ const atualizarTipoReceita = (
+  colabIndex: number,
+  tipoIndex: number,
+  campo: "tipo" | "percentual",
+  valor: string | number
+) => {
+  const atualizado = [...colaboradores];
+  atualizado[colabIndex].tiposReceita[tipoIndex][campo] = valor as never;
+  setColaboradores(atualizado);
+};
 
   const adicionarColaborador = () => {
     setColaboradores([...colaboradores, { nome: "", tiposReceita: [{ tipo: "", percentual: 0 }] }]);
