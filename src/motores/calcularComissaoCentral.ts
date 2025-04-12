@@ -1,3 +1,8 @@
+import { executarRegra } from "./motorComissao";
+import { executarRegraDependente } from "./motorComissaoDependente";
+import { executarRegraDependenteAvancada } from "./motorComissaoDependenteAvancado";
+import { executarRegraExcelAvancada } from "./motorComissaoExcelAvancado";
+
 type RegraComissao = {
   tipo: string;
   [chave: string]: any;
