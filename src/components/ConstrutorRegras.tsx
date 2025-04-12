@@ -55,7 +55,7 @@ export default function ConstrutorRegras() {
     setColaboradores(atualizado);
   };
 
-  const alternarFuncao = (func) => {
+  const alternarFuncao = (func: string) => {
     setFuncoesExtras(prev =>
       prev.includes(func) ? prev.filter(f => f !== func) : [...prev, func]
     );
