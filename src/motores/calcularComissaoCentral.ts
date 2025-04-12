@@ -1,1 +1,19 @@
 
+import { executarRegra } from './motorComissao';
+import { executarRegraDependente } from './motorComissaoDependente';
+import { executarRegraDependenteAvancada } from './motorComissaoDependenteAvancado';
+import { executarRegraExcelAvancada } from './motorComissaoExcelAvancado';
+
+export function calcularComissaoCentral(dados, regra) {
+  switch (regra.tipo) {
+    case "comissao_dependente_excel":
+      return executarRegraExcelAvancada(dados, regra);
+    case "comissao_dependente_avancada":
+      return executarRegraDependenteAvancada(dados, regra);
+    case "comissao_dependente":
+      return executarRegraDependente(dados, regra);
+    default:
+      return executarRegra(dados, regra);
+  }
+}
+
