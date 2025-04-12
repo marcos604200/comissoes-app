@@ -12,7 +12,7 @@ export default function ConstrutorRegras() {
   ]);
   const [funcoesExtras, setFuncoesExtras] = useState<string[]>([]);
   const [simular, setSimular] = useState(false);
-  const [resultadoSimulacao, setResultadoSimulacao] = useState(null);
+  const [resultadoSimulacao, setResultadoSimulacao] = useState<Record<string, any> | null>(null);
   const [regrasSalvas, setRegrasSalvas] = useState([]);
 
   const tiposFuncoes = [
