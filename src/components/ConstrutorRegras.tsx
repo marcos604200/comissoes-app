@@ -49,7 +49,7 @@ export default function ConstrutorRegras() {
     setColaboradores([...colaboradores, { nome: "", tiposReceita: [{ tipo: "", percentual: 0 }] }]);
   };
 
-  const adicionarTipoReceita = (index) => {
+  const adicionarTipoReceita = (index: number) => {
     const atualizado = [...colaboradores];
     atualizado[index].tiposReceita.push({ tipo: "", percentual: 0 });
     setColaboradores(atualizado);
