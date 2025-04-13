@@ -57,12 +57,12 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
         return `(${val.join(" + ")} / ${val.length})`;
       })
       .replace(/DESVPAD\(([^\)]+)\)/gi, (_, valores) => {
-        const val = valores.split(",").map((v: string) => v.trim());
-        return `(() => {
-          const m = (${val.join(" + ")} / ${val.length});
-          return Math.sqrt([${val.map(v => `(Math.pow(${v} - m, 2))`).join(",")}].reduce((a, b) => a + b, 0) / ${val.length});
-        })()`;
-      })
+  const val = valores.split(",").map((v: string) => v.trim());
+  return `(() => {
+    const m = (${val.join(" + ")} / ${val.length});
+    return Math.sqrt([${val.map((v: string) => `(Math.pow(${v} - m, 2))`).join(",")}].reduce((a, b) => a + b, 0) / ${val.length});
+  })()`;
+})
       .replace(/MÍNIMO\(([^\)]+)\)/gi, (_, valores) => {
         return `Math.min(${valores})`;
       })
