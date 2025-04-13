@@ -33,7 +33,7 @@ export default function ConstrutorRegras() {
     { label: "MÁXIMO", exemplo: "=MÁXIMO(valor1, valor2, ...)" },
     { label: "ABS", exemplo: "=ABS(valor)" },
     { label: "ARRED", exemplo: "=ARRED(valor, casas_decimais)" },
-    { label: "RECEITA", exemplo: "=RECEITA(\"João\", \"frete\")" },
+    { label: "RECEITA", exemplo: "=RECEITA(\"João\", \"frete\")" }
   ];
 
   const adicionarCampo = (campo: string) => {
@@ -117,7 +117,7 @@ export default function ConstrutorRegras() {
             type="text"
             value={formula}
             onChange={(e) => setFormula(e.target.value)}
-            placeholder="Exemplo: =frete * 0.1 + RECEITA(\"João\", \"frete\")"
+            placeholder='Exemplo: =frete * 0.1 + RECEITA("João", "frete")'
             className="w-full border px-2 py-1 rounded"
           />
 
