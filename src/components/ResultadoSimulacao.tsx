@@ -16,7 +16,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
       .replace(/SOMASE\(([^,]+),([^,]+),([^\)]+)\)/gi, (_, intervalo, criterio, soma) => {
         return `${soma}.filter((_, i) => ${intervalo}[i] === ${criterio}).reduce((a, b) => a + b, 0)`;
       })
-      .replace(/SOMASES\(([^\)]+)\)/gi, (_, args) => {
+      .replace(/SOMASES\(([^\)]+)\)/gi, (_, args: string) => {
         const partes = args.split(",").map((p: string) => p.trim());
         const condicoes: string[] = [];
         for (let i = 0; i < partes.length - 1; i += 2) {
@@ -30,7 +30,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
       .replace(/CONT\.SE\(([^,]+),([^\)]+)\)/gi, (_, intervalo, criterio) => {
         return `${intervalo}.filter(v => v === ${criterio}).length`;
       })
-      .replace(/CONT\.SES\(([^\)]+)\)/gi, (_, args) => {
+      .replace(/CONT\.SES\(([^\)]+)\)/gi, (_, args: string) => {
         const partes = args.split(",").map((p: string) => p.trim());
         const condicoes: string[] = [];
         for (let i = 0; i < partes.length; i += 2) {
@@ -73,7 +73,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
   const formulaComFuncoes = substituirFuncoesAvancadas(formula);
 
   const formulaInterpretada = formulaComFuncoes.replace(/\[([^\]]+)\]/g, (_, campo) => {
-    return String(dadosSimulados[campo] ?? 0);
+    return String((dadosSimulados as Record<string, number>)[campo] ?? 0);
   });
 
   let resultadoFinal = 0;
