@@ -62,11 +62,11 @@ export default function ConstrutorRegras() {
   };
 
   const buscarTiposReceita = async () => {
-  const { data, error } = await supabase.from("tipos_receita").select("descricao").order("descricao");
-  if (data && !error) {
-    setTiposReceita(data.map((r) => r.descricao));
-  }
-};
+    const { data, error } = await supabase.from("tipos_receita").select("descricao").order("descricao");
+    if (data && !error) {
+      setTiposReceita(data.map((r) => r.descricao));
+    }
+  };
 
   const excluirRegra = async (id: number) => {
     await supabase.from("regras_comissao").delete().eq("id", id);
