@@ -1,113 +1,95 @@
-interface Props {
+import { useEffect, useState } from "react";
+
+interface ResultadoSimulacaoProps {
   camposBase: string[];
   formula: string;
 }
 
-export default function ResultadoSimulacao({ camposBase, formula }: Props) {
-  const dadosSimulados: Record<string, number> = {
-    frete: 12000,
-    armazenagem: 3000,
-    pedagio: 800,
-    taxa: 500,
-    comissaoBase: 0.05,
-    adicional: 200,
-  };
+export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSimulacaoProps) {
+  const [expressaoInterpretada, setExpressaoInterpretada] = useState<string>("");
+  const [resultado, setResultado] = useState<number | null>(null);
+  const [erro, setErro] = useState<string>("");
 
-  const dependentes: Record<string, number> = {
-    colaboradorA: 1000,
-    colaboradorB: 2000,
-    colaboradorC: 3000,
-  };
+  useEffect(() => {
+    const dadosSimulados: Record<string, number> = {
+      frete: 1000,
+      pedagio: 200,
+      taxa: 50,
+      armazenagem: 3000,
+      "ct-e": 800,
+      guia: 150,
+      seguro: 120,
+      agenciamento: 400
+    };
 
-  const substituirFuncoesAvancadas = (input: string): string => {
-    return input
-      .replace(/SOMASE\(([^,]+),([^,]+),([^\)]+)\)/gi, (_, intervalo, criterio, soma) => {
-        return `${soma}.filter((_, i) => ${intervalo}[i] === ${criterio}).reduce((a, b) => a + b, 0)`;
-      })
-      .replace(/SOMASES\(([^\)]+)\)/gi, (_, args: string) => {
-        const partes = args.split(",").map((p: string) => p.trim());
-        const condicoes: string[] = [];
-        for (let i = 0; i < partes.length - 1; i += 2) {
-          condicoes.push(`(${partes[i]}[i] === ${partes[i + 1]})`);
-        }
-        return `${partes.at(-1)}.filter((_, i) => ${condicoes.join(" && ")}).reduce((a, b) => a + b, 0)`;
-      })
-      .replace(/PROCV\(([^,]+),([^,]+),([^\)]+)\)/gi, (_, valor, matriz, coluna) => {
-        return `${matriz}.find(r => r[0] === ${valor})?.[${coluna} - 1] ?? 0`;
-      })
-      .replace(/CONT\.SE\(([^,]+),([^\)]+)\)/gi, (_, intervalo, criterio) => {
-        return `${intervalo}.filter(v => v === ${criterio}).length`;
-      })
-      .replace(/CONT\.SES\(([^\)]+)\)/gi, (_, args: string) => {
-        const partes = args.split(",").map((p: string) => p.trim());
-        const condicoes: string[] = [];
-        for (let i = 0; i < partes.length; i += 2) {
-          condicoes.push(`(${partes[i]}[i] === ${partes[i + 1]})`);
-        }
-        return `${partes[0]}.filter((_, i) => ${condicoes.join(" && ")}).length`;
-      })
-      .replace(/ÍNDICE\(([^,]+),([^\)]+)\)/gi, (_, array, linha) => {
-        return `${array}[${linha} - 1]`;
-      })
-      .replace(/CORRESP\(([^,]+),([^\)]+)\)/gi, (_, valor, intervalo) => {
-        return `${intervalo}.indexOf(${valor}) + 1`;
-      })
-      .replace(/MÉDIA\(([^\)]+)\)/gi, (_, valores) => {
-        const val = valores.split(",").map((v: string) => v.trim());
-        return `(${val.join(" + ")} / ${val.length})`;
-      })
-      .replace(/DESVPAD\(([^\)]+)\)/gi, (_, valores) => {
-  const val = valores.split(",").map((v: string) => v.trim());
-  return `(() => {
-    const m = (${val.join(" + ")} / ${val.length});
-    return Math.sqrt([${val.map((v: string) => `(Math.pow(${v} - m, 2))`).join(",")}].reduce((a, b) => a + b, 0) / ${val.length});
-  })()`;
-})
-      .replace(/MÍNIMO\(([^\)]+)\)/gi, (_, valores) => {
-        return `Math.min(${valores})`;
-      })
-      .replace(/MÁXIMO\(([^\)]+)\)/gi, (_, valores) => {
-        return `Math.max(${valores})`;
-      })
-      .replace(/ABS\(([^\)]+)\)/gi, (_, valor) => {
-        return `Math.abs(${valor})`;
-      })
-      .replace(/ARRED\(([^,]+),([^\)]+)\)/gi, (_, valor, casas) => {
-        return `Number(${valor}).toFixed(${casas})`;
-      })
-      .replace(/SE\(([^,]+),([^,]+),([^\)]+)\)/gi, (_, cond, vTrue, vFalse) => {
-        return `(${cond}) ? (${vTrue}) : (${vFalse})`;
-      });
-  };
+    try {
+      let expr = formula
+        .replace(/=/g, "")
+        .replace(/\[/g, "")
+        .replace(/\]/g, "")
+        .replace(/([a-zA-Z0-9\-]+)/g, (match) => {
+          const valor = dadosSimulados[match];
+          if (typeof valor !== "undefined") {
+            return valor.toString();
+          }
+          return match;
+        })
+        // Funções Excel simuladas
+        .replace(/MEDIA\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          const soma = val.reduce((a, b) => a + b, 0);
+          return (soma / val.length).toString();
+        })
+        .replace(/SOMA\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          const soma = val.reduce((a, b) => a + b, 0);
+          return soma.toString();
+        })
+        .replace(/M\u00cdNIMO\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          return Math.min(...val).toString();
+        })
+        .replace(/M\u00c1XIMO\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          return Math.max(...val).toString();
+        })
+        .replace(/ABS\(([^)]+)\)/gi, (_, valor) => {
+          return Math.abs(parseFloat(valor.trim())).toString();
+        })
+        .replace(/DESVPAD\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          const media = val.reduce((a, b) => a + b, 0) / val.length;
+          const somaQuadrados = val.map((v: number) => Math.pow(v - media, 2)).reduce((a, b) => a + b, 0);
+          return Math.sqrt(somaQuadrados / val.length).toString();
+        })
+        .replace(/ARRED\(([^,]+),\s*([^)]+)\)/gi, (_, valor, casas) => {
+          return parseFloat(valor.trim()).toFixed(parseInt(casas.trim()));
+        });
 
-  const formulaComFuncoes = substituirFuncoesAvancadas(formula);
+      const resultadoCalculado = Function(`"use strict"; return (${expr})`)();
 
-  const formulaInterpretada = formulaComFuncoes.replace(/\[([^\]]+)\]/g, (_, campo: string) => {
-    return String(dadosSimulados[campo] ?? dependentes[campo] ?? 0);
-  });
-
-  let resultadoFinal = 0;
-  let erro = null;
-
-  try {
-    const jsFormula = formulaInterpretada.replace(/^=/, "");
-    resultadoFinal = Function("\"use strict\"; return (" + jsFormula + ")")();
-  } catch (e) {
-    erro = "Erro ao interpretar a fórmula. Verifique a sintaxe.";
-  }
+      setExpressaoInterpretada("=" + expr);
+      setResultado(resultadoCalculado);
+      setErro("");
+    } catch (err) {
+      setErro("Erro ao interpretar a fórmula. Verifique a sintaxe.");
+      setExpressaoInterpretada("=" + formula);
+      setResultado(null);
+    }
+  }, [camposBase, formula]);
 
   return (
-    <div className="bg-gray-50 p-4 rounded mt-4 border">
-      <h4 className="font-bold mb-2">🧪 Resultado da Simulação</h4>
+    <div className="mt-6 p-4 border rounded bg-gray-50">
+      <h3 className="font-bold text-lg mb-2">📈 Resultado da Simulação</h3>
       {erro ? (
-        <p className="text-red-600">{erro}</p>
+        <p className="text-red-600 text-sm mb-2">{erro}</p>
       ) : (
-        <p className="text-green-700">
-          Valor com base em <strong>{camposBase.join(", ")}</strong>: {" "}
-          <span className="font-bold">R$ {resultadoFinal.toFixed(2)}</span>
-        </p>
+        <p className="text-green-700 text-sm mb-2">Expressão interpretada: {expressaoInterpretada}</p>
       )}
-      <p className="text-sm text-gray-500 mt-1">Expressão interpretada: {formulaInterpretada}</p>
+
+      {resultado !== null && (
+        <p className="text-blue-800 font-semibold text-xl">Resultado: {resultado.toFixed(2)}</p>
+      )}
     </div>
   );
 }
