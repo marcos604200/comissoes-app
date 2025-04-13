@@ -17,26 +17,17 @@ export default function ConstrutorRegras() {
   const [simular, setSimular] = useState(false);
   const [tiposReceita, setTiposReceita] = useState<string[]>([]);
   const [colaboradores, setColaboradores] = useState<string[]>([]);
-  const [colabSelecionado, setColabSelecionado] = useState<string>("");
-  const [receitaSelecionada, setReceitaSelecionada] = useState<string>("");
 
   const funcoesDisponiveis = [
     { label: "SOMA", exemplo: "=frete + pedagio" },
     { label: "SE", exemplo: "=SE(frete > 1000, 10, 5)" },
-    { label: "SOMASE", exemplo: "=SOMASE(intervalo, criterio, soma)" },
-    { label: "SOMASES", exemplo: "=SOMASES(campo1, crit1, campo2, crit2, ..., campo_soma)" },
-    { label: "PROCV", exemplo: "=PROCV(valor, matriz, coluna)" },
-    { label: "CONT.SE", exemplo: "=CONT.SE(intervalo, criterio)" },
-    { label: "CONT.SES", exemplo: "=CONT.SES(campo1, crit1, campo2, crit2)" },
-    { label: "ÍNDICE", exemplo: "=ÍNDICE(intervalo, posição)" },
-    { label: "CORRESP", exemplo: "=CORRESP(valor, intervalo)" },
-    { label: "MÉDIA", exemplo: "=MÉDIA(valor1, valor2, ...)" },
-    { label: "DESVPAD", exemplo: "=DESVPAD(valor1, valor2, ...)" },
-    { label: "MÍNIMO", exemplo: "=MÍNIMO(valor1, valor2, ...)" },
-    { label: "MÁXIMO", exemplo: "=MÁXIMO(valor1, valor2, ...)" },
-    { label: "ABS", exemplo: "=ABS(valor)" },
-    { label: "ARRED", exemplo: "=ARRED(valor, casas_decimais)" },
-    { label: "RECEITA", exemplo: "=RECEITA(\"joao\", \"frete\")" }
+    { label: "MEDIA", exemplo: "=MEDIA(frete, pedagio)" },
+    { label: "DESVPAD", exemplo: "=DESVPAD(frete, pedagio)" },
+    { label: "MINIMO", exemplo: "=MINIMO(frete, pedagio)" },
+    { label: "MAXIMO", exemplo: "=MAXIMO(frete, pedagio)" },
+    { label: "ABS", exemplo: "=ABS(-10)" },
+    { label: "ARRED", exemplo: "=ARRED(frete, 2)" },
+    { label: "RECEITA", exemplo: "=RECEITA(\"João\", \"frete\")" }
   ];
 
   const adicionarCampo = (campo: string) => {
@@ -46,11 +37,7 @@ export default function ConstrutorRegras() {
   };
 
   const salvarRegra = async () => {
-    const novaRegra = {
-      nome,
-      camposBase,
-      formula
-    };
+    const novaRegra = { nome, camposBase, formula };
     const { error } = await supabase.from("regras_comissao").insert([novaRegra]);
     if (!error) {
       buscarRegras();
@@ -61,7 +48,10 @@ export default function ConstrutorRegras() {
   };
 
   const buscarRegras = async () => {
-    const { data } = await supabase.from("regras_comissao").select("id, nome, camposBase, formula").order("id", { ascending: false });
+    const { data } = await supabase
+      .from("regras_comissao")
+      .select("id, nome, camposBase, formula")
+      .order("id", { ascending: false });
     setRegrasSalvas(data ?? []);
   };
 
@@ -76,13 +66,6 @@ export default function ConstrutorRegras() {
     const { data, error } = await supabase.from("colaboradores").select("nome").order("nome");
     if (data && !error) {
       setColaboradores(data.map((c) => c.nome));
-    }
-  };
-
-  const inserirFuncaoReceita = () => {
-    if (colabSelecionado && receitaSelecionada) {
-      const novaFormula = formula + `RECEITA(\"${colabSelecionado}\", \"${receitaSelecionada}\")`;
-      setFormula(novaFormula);
     }
   };
 
@@ -127,21 +110,9 @@ export default function ConstrutorRegras() {
             type="text"
             value={formula}
             onChange={(e) => setFormula(e.target.value)}
-            placeholder="Exemplo: =frete * 0.1 + pedagio"
+            placeholder="Exemplo: =frete * 0.1 + RECEITA(\"João\", \"frete\")"
             className="w-full border px-2 py-1 rounded"
           />
-
-          <div className="flex items-center gap-2 mt-2">
-            <select value={colabSelecionado} onChange={(e) => setColabSelecionado(e.target.value)} className="border p-1 rounded">
-              <option value="">Colaborador</option>
-              {colaboradores.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={receitaSelecionada} onChange={(e) => setReceitaSelecionada(e.target.value)} className="border p-1 rounded">
-              <option value="">Receita</option>
-              {tiposReceita.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-            <button onClick={inserirFuncaoReceita} className="bg-gray-200 px-2 py-1 rounded">Inserir RECEITA</button>
-          </div>
 
           <button
             onClick={salvarRegra}
