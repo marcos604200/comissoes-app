@@ -36,20 +36,20 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
         })
         // Funções Excel simuladas
         .replace(/MEDIA\(([^)]+)\)/gi, (_, valores) => {
-  const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
-  const soma = val.reduce((a: number, b: number) => a + b, 0);
-  return (soma / val.length).toString();
-})
-.replace(/SOMA\(([^)]+)\)/gi, (_, valores) => {
-  const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
-  const soma = val.reduce((a: number, b: number) => a + b, 0);
-  return soma.toString();
-})
-        .replace(/M\u00cdNIMO\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          const soma = val.reduce((a: number, b: number) => a + b, 0);
+          return (soma / val.length).toString();
+        })
+        .replace(/SOMA\(([^)]+)\)/gi, (_, valores) => {
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          const soma = val.reduce((a: number, b: number) => a + b, 0);
+          return soma.toString();
+        })
+        .replace(/MÍNIMO\(([^)]+)\)/gi, (_, valores) => {
           const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
           return Math.min(...val).toString();
         })
-        .replace(/M\u00c1XIMO\(([^)]+)\)/gi, (_, valores) => {
+        .replace(/MÁXIMO\(([^)]+)\)/gi, (_, valores) => {
           const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
           return Math.max(...val).toString();
         })
@@ -57,11 +57,11 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
           return Math.abs(parseFloat(valor.trim())).toString();
         })
         .replace(/DESVPAD\(([^)]+)\)/gi, (_, valores) => {
-  const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
-  const media = val.reduce((a: number, b: number) => a + b, 0) / val.length;
-  const somaQuadrados = val.map((v: number) => Math.pow(v - media, 2)).reduce((a: number, b: number) => a + b, 0);
-  return Math.sqrt(somaQuadrados / val.length).toString();
-})
+          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+          const media = val.reduce((a: number, b: number) => a + b, 0) / val.length;
+          const somaQuadrados = val.map((v: number) => Math.pow(v - media, 2)).reduce((a: number, b: number) => a + b, 0);
+          return Math.sqrt(somaQuadrados / val.length).toString();
+        })
         .replace(/ARRED\(([^,]+),\s*([^)]+)\)/gi, (_, valor, casas) => {
           return parseFloat(valor.trim()).toFixed(parseInt(casas.trim()));
         });
