@@ -94,7 +94,7 @@ export default function ConstrutorRegras() {
     setRegrasSalvas(data ?? []);
   };
 
-  const excluirRegra = async (id) => {
+  const excluirRegra = async (id: number) => {
     await supabase.from("regras_comissao").delete().eq("id", id);
     buscarRegras();
   };
