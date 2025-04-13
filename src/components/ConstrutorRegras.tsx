@@ -16,6 +16,9 @@ export default function ConstrutorRegras() {
   const [regrasSalvas, setRegrasSalvas] = useState<RegraComissao[]>([]);
   const [simular, setSimular] = useState(false);
   const [tiposReceita, setTiposReceita] = useState<string[]>([]);
+  const [colaboradores, setColaboradores] = useState<string[]>([]);
+  const [colabSelecionado, setColabSelecionado] = useState<string>("");
+  const [receitaSelecionada, setReceitaSelecionada] = useState<string>("");
 
   const funcoesDisponiveis = [
     { label: "SOMA", exemplo: "=frete + pedagio" },
@@ -33,7 +36,7 @@ export default function ConstrutorRegras() {
     { label: "MÁXIMO", exemplo: "=MÁXIMO(valor1, valor2, ...)" },
     { label: "ABS", exemplo: "=ABS(valor)" },
     { label: "ARRED", exemplo: "=ARRED(valor, casas_decimais)" },
-    { label: "RECEITA", exemplo: '=RECEITA("joao", "frete")' }
+    { label: "RECEITA", exemplo: "=RECEITA(\"joao\", \"frete\")" }
   ];
 
   const adicionarCampo = (campo: string) => {
@@ -43,7 +46,11 @@ export default function ConstrutorRegras() {
   };
 
   const salvarRegra = async () => {
-    const novaRegra = { nome, camposBase, formula };
+    const novaRegra = {
+      nome,
+      camposBase,
+      formula
+    };
     const { error } = await supabase.from("regras_comissao").insert([novaRegra]);
     if (!error) {
       buscarRegras();
@@ -54,10 +61,7 @@ export default function ConstrutorRegras() {
   };
 
   const buscarRegras = async () => {
-    const { data } = await supabase
-      .from("regras_comissao")
-      .select("id, nome, camposBase, formula")
-      .order("id", { ascending: false });
+    const { data } = await supabase.from("regras_comissao").select("id, nome, camposBase, formula").order("id", { ascending: false });
     setRegrasSalvas(data ?? []);
   };
 
@@ -65,6 +69,20 @@ export default function ConstrutorRegras() {
     const { data, error } = await supabase.from("tipos_receita").select("descricao").order("descricao");
     if (data && !error) {
       setTiposReceita(data.map((r) => r.descricao));
+    }
+  };
+
+  const buscarColaboradores = async () => {
+    const { data, error } = await supabase.from("colaboradores").select("nome").order("nome");
+    if (data && !error) {
+      setColaboradores(data.map((c) => c.nome));
+    }
+  };
+
+  const inserirFuncaoReceita = () => {
+    if (colabSelecionado && receitaSelecionada) {
+      const novaFormula = formula + `RECEITA(\"${colabSelecionado}\", \"${receitaSelecionada}\")`;
+      setFormula(novaFormula);
     }
   };
 
@@ -76,6 +94,7 @@ export default function ConstrutorRegras() {
   useEffect(() => {
     buscarRegras();
     buscarTiposReceita();
+    buscarColaboradores();
   }, []);
 
   return (
@@ -103,12 +122,6 @@ export default function ConstrutorRegras() {
             ))}
           </div>
 
-          {camposBase.length > 0 && (
-            <p className="text-sm text-gray-600 mt-2">
-              Selecionados: {camposBase.join(", ")}
-            </p>
-          )}
-
           <label className="block font-bold mt-4">Fórmula</label>
           <input
             type="text"
@@ -117,6 +130,18 @@ export default function ConstrutorRegras() {
             placeholder="Exemplo: =frete * 0.1 + pedagio"
             className="w-full border px-2 py-1 rounded"
           />
+
+          <div className="flex items-center gap-2 mt-2">
+            <select value={colabSelecionado} onChange={(e) => setColabSelecionado(e.target.value)} className="border p-1 rounded">
+              <option value="">Colaborador</option>
+              {colaboradores.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={receitaSelecionada} onChange={(e) => setReceitaSelecionada(e.target.value)} className="border p-1 rounded">
+              <option value="">Receita</option>
+              {tiposReceita.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <button onClick={inserirFuncaoReceita} className="bg-gray-200 px-2 py-1 rounded">Inserir RECEITA</button>
+          </div>
 
           <button
             onClick={salvarRegra}
