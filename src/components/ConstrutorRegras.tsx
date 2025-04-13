@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ResultadoSimulacao from "./ResultadoSimulacao";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/utils/supabase";
 
 interface RegraComissao {
   id?: number;
