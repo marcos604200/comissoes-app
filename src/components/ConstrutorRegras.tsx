@@ -1,165 +1,204 @@
-
-'use client';
 import { useState, useEffect } from "react";
-import { calcularComissaoCentral } from "@/motores/calcularComissaoCentral";
 import { supabase } from "@/utils/supabase";
 import ResultadoSimulacao from "./ResultadoSimulacao";
 
+interface RegraComissao {
+  colaborador: string;
+  base: string[];
+  formula: string;
+  tipo: "simples" | "avancado";
+  funcoesExtras?: string[];
+  id?: number;
+}
+
 export default function ConstrutorRegras() {
-  const [destinatario, setDestinatario] = useState("");
-  const [colaboradores, setColaboradores] = useState([
-    { nome: "", tiposReceita: [{ tipo: "", percentual: 0 }] }
-  ]);
+  const [modo, setModo] = useState<"simples" | "avancado">("simples");
+  const [colaborador, setColaborador] = useState("");
+  const [base, setBase] = useState<string[]>([]);
+  const [formula, setFormula] = useState("");
   const [funcoesExtras, setFuncoesExtras] = useState<string[]>([]);
-  const [simular, setSimular] = useState(false);
-  const [resultadoSimulacao, setResultadoSimulacao] = useState<Record<string, any> | null>(null);
-  const [regrasSalvas, setRegrasSalvas] = useState<{ id: number; regra_json: any }[]>([]);
+  const [regrasSalvas, setRegrasSalvas] = useState<RegraComissao[]>([]);
+  const [edicaoId, setEdicaoId] = useState<number | null>(null);
+  const [filtro, setFiltro] = useState("");
 
-  const tiposFuncoes = [
-    "media", "desvio", "potencia", "minmax",
-    "se", "ses", "somase", "somases",
-    "cont.se", "cont.ses", "indice_corresp", "procv", "procx"
-  ];
+  const camposDisponiveis = ["frete", "armazenagem", "pedagio", "taxa"].sort();
+  const opcoesFuncoes = ["media", "desvio", "potencia", "somase", "somases", "procv", "se"];
 
-  const atualizarColaborador = (
-  index: number,
-  campo: "nome" | "tiposReceita",
-  valor: any
-) => {
-  const atualizado = [...colaboradores];
-  atualizado[index] = {
-    ...atualizado[index],
-    [campo]: valor,
-  };
-  setColaboradores(atualizado);
-};
-
- const atualizarTipoReceita = (
-  colabIndex: number,
-  tipoIndex: number,
-  campo: "tipo" | "percentual",
-  valor: string | number
-) => {
-  const atualizado = [...colaboradores];
-  atualizado[colabIndex].tiposReceita[tipoIndex][campo] = valor as never;
-  setColaboradores(atualizado);
-};
-
-  const adicionarColaborador = () => {
-    setColaboradores([...colaboradores, { nome: "", tiposReceita: [{ tipo: "", percentual: 0 }] }]);
-  };
-
-  const adicionarTipoReceita = (index: number) => {
-    const atualizado = [...colaboradores];
-    atualizado[index].tiposReceita.push({ tipo: "", percentual: 0 });
-    setColaboradores(atualizado);
-  };
-
-  const alternarFuncao = (func: string) => {
-    setFuncoesExtras(prev =>
-      prev.includes(func) ? prev.filter(f => f !== func) : [...prev, func]
+  const alternarCampoBase = (campo: string) => {
+    setBase((prev) =>
+      prev.includes(campo) ? prev.filter((c) => c !== campo) : [...prev, campo]
     );
   };
 
-  const regra = {
-    descricao: "Regra criada via interface",
-    tipo: "comissao_dependente_excel",
-    destinatario,
-    dependencias: colaboradores.map(c => ({
-      colaborador: c.nome,
-      porcentagens: Object.fromEntries(c.tiposReceita.map(tr => [tr.tipo, tr.percentual]))
-    })),
-    funcoes_extra: funcoesExtras
-  };
-
-  const dadosTeste = {
-    amanda: { frete: 12000, armazenagem: 3000 },
-    bruno: { frete: 5000, comissao_terceiros: 7000 },
-    lucas: { armazenagem: 10000 }
-  };
-
-  const simularCalculo = () => {
-    const resultado = calcularComissaoCentral(dadosTeste, regra);
-    setResultadoSimulacao(resultado);
-    setSimular(true);
+  const alternarFuncaoExtra = (func: string) => {
+    setFuncoesExtras((prev) =>
+      prev.includes(func) ? prev.filter((f) => f !== func) : [...prev, func]
+    );
   };
 
   const salvarRegra = async () => {
-    const { error } = await supabase.from("regras_comissao").insert([{ regra_json: regra }]);
-    if (!error) buscarRegras();
+    const novaRegra: RegraComissao = {
+      colaborador,
+      base,
+      formula,
+      tipo: modo,
+      funcoesExtras,
+    };
+    if (edicaoId !== null) {
+      await supabase.from("regras_comissao").update({ regra_json: novaRegra }).eq("id", edicaoId);
+      setEdicaoId(null);
+    } else {
+      await supabase.from("regras_comissao").insert([{ regra_json: novaRegra }]);
+    }
+    buscarRegras();
   };
 
   const buscarRegras = async () => {
     const { data } = await supabase.from("regras_comissao").select("id, regra_json").order("id", { ascending: false });
-    setRegrasSalvas(data ?? []);
+    if (data) {
+      const regras = data.map((d) => ({ ...d.regra_json, id: d.id }));
+      setRegrasSalvas(regras);
+    }
   };
 
   const excluirRegra = async (id: number) => {
-  await supabase.from("regras_comissao").delete().eq("id", id);
-  buscarRegras();
-};
+    await supabase.from("regras_comissao").delete().eq("id", id);
+    buscarRegras();
+  };
+
+  const editarRegra = (regra: RegraComissao) => {
+    setColaborador(regra.colaborador);
+    setBase(regra.base);
+    setFormula(regra.formula);
+    setModo(regra.tipo);
+    setFuncoesExtras(regra.funcoesExtras || []);
+    setEdicaoId(regra.id ?? null);
+  };
+
+  const exportarJson = () => {
+    const blob = new Blob([JSON.stringify(regrasSalvas, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "regras_comissao.json";
+    a.click();
+  };
 
   useEffect(() => {
     buscarRegras();
   }, []);
 
+  const regrasFiltradas = regrasSalvas.filter((r) =>
+    r.colaborador.toLowerCase().includes(filtro.toLowerCase())
+  );
+
   return (
-    <div className="p-4 bg-white rounded-xl shadow-md">
-      <h2 className="text-xl font-bold mb-4">🔧 Construtor de Regra de Comissão</h2>
+    <div className="bg-white p-6 rounded shadow-md">
+      <div className="mb-4">
+        <label className="font-semibold mr-4">Modo:</label>
+        <button
+          className={`px-2 py-1 border rounded mr-2 ${modo === "simples" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          onClick={() => setModo("simples")}
+        >Simples</button>
+        <button
+          className={`px-2 py-1 border rounded ${modo === "avancado" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          onClick={() => setModo("avancado")}
+        >Avançado</button>
+      </div>
 
-      <label>Destinatário (Gerente)</label>
-      <input value={destinatario} onChange={e => setDestinatario(e.target.value)} className="border p-2 w-full mb-4" />
+      <div className="mb-4">
+        <label className="block font-medium">Colaborador:</label>
+        <input
+          type="text"
+          className="border p-2 w-full"
+          value={colaborador}
+          onChange={(e) => setColaborador(e.target.value)}
+        />
+      </div>
 
-      {colaboradores.map((colab, i) => (
-        <div key={i} className="mb-4 border p-2 rounded">
-          <label>Colaborador</label>
-          <input value={colab.nome} onChange={e => atualizarColaborador(i, "nome", e.target.value)} className="border p-1 w-full mb-2" />
-
-          {colab.tiposReceita.map((tr, j) => (
-            <div key={j} className="flex gap-2 mb-2">
-              <input placeholder="Tipo Receita" value={tr.tipo} onChange={e => atualizarTipoReceita(i, j, "tipo", e.target.value)} className="border p-1 w-1/2" />
-              <input placeholder="%" type="number" value={tr.percentual} onChange={e => atualizarTipoReceita(i, j, "percentual", +e.target.value)} className="border p-1 w-1/4" />
-            </div>
+      <div className="mb-4">
+        <label className="block font-medium">Campos base:</label>
+        <div className="flex flex-wrap gap-2">
+          {camposDisponiveis.map((campo) => (
+            <label key={campo} className="flex items-center space-x-1">
+              <input
+                type="checkbox"
+                checked={base.includes(campo)}
+                onChange={() => alternarCampoBase(campo)}
+              />
+              <span>{campo}</span>
+            </label>
           ))}
-
-          <button onClick={() => adicionarTipoReceita(i)} className="text-blue-600 text-sm">+ Tipo de Receita</button>
         </div>
-      ))}
-
-      <button onClick={adicionarColaborador} className="bg-blue-500 text-white px-4 py-2 rounded mb-4">+ Colaborador</button>
-
-      <h3 className="font-semibold mb-2">Funções Avançadas</h3>
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {tiposFuncoes.map(func => (
-          <label key={func} className="flex items-center gap-2">
-            <input type="checkbox" checked={funcoesExtras.includes(func)} onChange={() => alternarFuncao(func)} />
-            {func}
-          </label>
-        ))}
       </div>
 
-      <div className="flex gap-2 mb-4">
-        <button onClick={simularCalculo} className="bg-green-600 text-white px-4 py-2 rounded">Simular Cálculo</button>
-        <button onClick={salvarRegra} className="bg-blue-700 text-white px-4 py-2 rounded">Salvar Regra</button>
+      <div className="mb-4">
+        <label className="block font-medium">Fórmula (estilo Excel):</label>
+        <input
+          type="text"
+          className="border p-2 w-full"
+          placeholder="=SE([frete]>10000; [frete]*0.1; [frete]*0.05) + [armazenagem]*0.02"
+          value={formula}
+          onChange={(e) => setFormula(e.target.value)}
+        />
       </div>
 
-      <h4 className="font-bold">📦 JSON da Regra</h4>
-      <pre className="bg-gray-100 p-2 rounded text-sm overflow-x-auto">
-        {JSON.stringify(regra, null, 2)}
-      </pre>
+      <div className="mb-4">
+        <label className="block font-medium">Funções avançadas:</label>
+        <div className="flex flex-wrap gap-2">
+          {opcoesFuncoes.map((func) => (
+            <label key={func} className="flex items-center space-x-1">
+              <input
+                type="checkbox"
+                checked={funcoesExtras.includes(func)}
+                onChange={() => alternarFuncaoExtra(func)}
+              />
+              <span>{func}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
-      {simular && resultadoSimulacao && (
-        <ResultadoSimulacao resultado={resultadoSimulacao} />
+      <div className="flex items-center gap-4 mb-4">
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          onClick={salvarRegra}
+        >{edicaoId !== null ? "Atualizar Regra" : "Salvar Regra"}</button>
+
+        <button
+          className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+          onClick={exportarJson}
+        >Exportar JSON</button>
+      </div>
+
+      {formula && base.length > 0 && (
+        <ResultadoSimulacao camposBase={base} formula={formula} />
       )}
 
-      <h3 className="font-bold mt-6">📋 Regras Cadastradas</h3>
-      {regrasSalvas.map(r => (
-        <div key={r.id} className="border p-2 my-2 rounded bg-gray-50">
-          <div className="text-sm">#{r.id}</div>
-          <pre className="text-xs overflow-x-auto">{JSON.stringify(r.regra_json, null, 2)}</pre>
-          <button onClick={() => excluirRegra(r.id)} className="text-red-600 text-sm mt-1">Excluir</button>
-        </div>
-      ))}
+      <div className="mb-2">
+        <input
+          type="text"
+          className="border p-2 w-full"
+          placeholder="🔍 Buscar por colaborador..."
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
+      </div>
+
+      <h2 className="text-lg font-bold mt-4">📋 Regras Salvas</h2>
+      <div className="space-y-2 mt-2">
+        {regrasFiltradas.map((regra) => (
+          <div key={regra.id} className="border p-2 rounded flex justify-between items-center">
+            <div>
+              <strong>{regra.colaborador}</strong> → {regra.formula}
+            </div>
+            <div className="space-x-2">
+              <button onClick={() => editarRegra(regra)} className="text-blue-600">Editar</button>
+              <button onClick={() => excluirRegra(regra.id!)} className="text-red-600">Excluir</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
