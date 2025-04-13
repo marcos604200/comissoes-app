@@ -59,7 +59,9 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
         .replace(/DESVPAD\(([^)]+)\)/gi, (_, valores) => {
           const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
           const media = val.reduce((a: number, b: number) => a + b, 0) / val.length;
-          const somaQuadrados = val.map((v: number) => Math.pow(v - media, 2)).reduce((a: number, b: number) => a + b, 0);
+          const somaQuadrados = val
+            .map((v: number) => Math.pow(v - media, 2))
+            .reduce((a: number, b: number) => a + b, 0);
           return Math.sqrt(somaQuadrados / val.length).toString();
         })
         .replace(/ARRED\(([^,]+),\s*([^)]+)\)/gi, (_, valor, casas) => {
@@ -84,11 +86,15 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
       {erro ? (
         <p className="text-red-600 text-sm mb-2">{erro}</p>
       ) : (
-        <p className="text-green-700 text-sm mb-2">Expressão interpretada: {expressaoInterpretada}</p>
+        <p className="text-green-700 text-sm mb-2">
+          Expressão interpretada: {expressaoInterpretada}
+        </p>
       )}
 
       {resultado !== null && (
-        <p className="text-blue-800 font-semibold text-xl">Resultado: {resultado.toFixed(2)}</p>
+        <p className="text-blue-800 font-semibold text-xl">
+          Resultado: {resultado.toFixed(2)}
+        </p>
       )}
     </div>
   );
