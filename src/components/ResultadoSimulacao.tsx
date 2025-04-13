@@ -59,9 +59,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
         .replace(/DESVPAD\(([^)]+)\)/gi, (_, valores) => {
           const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
           const media = val.reduce((a: number, b: number) => a + b, 0) / val.length;
-          const somaQuadrados = val
-            .map((v: number) => Math.pow(v - media, 2))
-            .reduce((a: number, b: number) => a + b, 0);
+          const somaQuadrados = val.map((v: number) => Math.pow(v - media, 2)).reduce((a: number, b: number) => a + b, 0);
           return Math.sqrt(somaQuadrados / val.length).toString();
         })
         .replace(/ARRED\(([^,]+),\s*([^)]+)\)/gi, (_, valor, casas) => {
