@@ -20,49 +20,52 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
       guia: 150,
       seguro: 120,
       agenciamento: 400,
+      "joao:frete": 1500,
+      "maria:frete": 1100,
+      "joao:ct-e": 900,
+      "maria:ct-e": 500
     };
 
     try {
       let expr = formula
-        .replace(/=/g, "")
-        .replace(/\[/g, "")
-        .replace(/\]/g, "")
+        .replace(/^=/, "")
+        .replace(/\[|\]/g, "")
+        .replace(/RECEITA\("([^"]+)",\s*"([^"]+)"\)/gi, (_: string, nome: string, receita: string) => {
+          const chave = `${nome.toLowerCase()}:${receita.toLowerCase()}`;
+          const valor = dadosSimulados[chave];
+          return typeof valor !== "undefined" ? valor.toString() : "0";
+        })
         .replace(/([a-zA-Z0-9\-]+)/g, (match) => {
           const valor = dadosSimulados[match];
-          if (typeof valor !== "undefined") {
-            return valor.toString();
-          }
-          return match;
+          return typeof valor !== "undefined" ? valor.toString() : match;
         })
-        // Funções Excel simuladas
-        .replace(/MEDIA\(([^)]+)\)/gi, (_, valores) => {
-          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+        .replace(/MEDIA\(([^)]+)\)/gi, (_: string, valores: string) => {
+          const val = valores.split(",").map((v) => parseFloat(v.trim()));
           const soma = val.reduce((a: number, b: number) => a + b, 0);
           return (soma / val.length).toString();
         })
-        .replace(/SOMA\(([^)]+)\)/gi, (_, valores) => {
-          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
-          const soma = val.reduce((a: number, b: number) => a + b, 0);
-          return soma.toString();
+        .replace(/SOMA\(([^)]+)\)/gi, (_: string, valores: string) => {
+          const val = valores.split(",").map((v) => parseFloat(v.trim()));
+          return val.reduce((a: number, b: number) => a + b, 0).toString();
         })
-        .replace(/MÍNIMO\(([^)]+)\)/gi, (_, valores) => {
-          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+        .replace(/M[ÍI]NIMO\(([^)]+)\)/gi, (_: string, valores: string) => {
+          const val = valores.split(",").map((v) => parseFloat(v.trim()));
           return Math.min(...val).toString();
         })
-        .replace(/MÁXIMO\(([^)]+)\)/gi, (_, valores) => {
-          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+        .replace(/M[ÁA]XIMO\(([^)]+)\)/gi, (_: string, valores: string) => {
+          const val = valores.split(",").map((v) => parseFloat(v.trim()));
           return Math.max(...val).toString();
         })
-        .replace(/ABS\(([^)]+)\)/gi, (_, valor) => {
+        .replace(/ABS\(([^)]+)\)/gi, (_: string, valor: string) => {
           return Math.abs(parseFloat(valor.trim())).toString();
         })
-        .replace(/DESVPAD\(([^)]+)\)/gi, (_, valores) => {
-          const val = valores.split(",").map((v: string) => parseFloat(v.trim()));
+        .replace(/DESVPAD\(([^)]+)\)/gi, (_: string, valores: string) => {
+          const val = valores.split(",").map((v) => parseFloat(v.trim()));
           const media = val.reduce((a: number, b: number) => a + b, 0) / val.length;
           const somaQuadrados = val.map((v: number) => Math.pow(v - media, 2)).reduce((a: number, b: number) => a + b, 0);
           return Math.sqrt(somaQuadrados / val.length).toString();
         })
-        .replace(/ARRED\(([^,]+),\s*([^)]+)\)/gi, (_, valor, casas) => {
+        .replace(/ARRED\(([^,]+),\s*([^)]+)\)/gi, (_: string, valor: string, casas: string) => {
           return parseFloat(valor.trim()).toFixed(parseInt(casas.trim()));
         });
 
@@ -84,15 +87,10 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
       {erro ? (
         <p className="text-red-600 text-sm mb-2">{erro}</p>
       ) : (
-        <p className="text-green-700 text-sm mb-2">
-          Expressão interpretada: {expressaoInterpretada}
-        </p>
+        <p className="text-green-700 text-sm mb-2">Expressão interpretada: {expressaoInterpretada}</p>
       )}
-
       {resultado !== null && (
-        <p className="text-blue-800 font-semibold text-xl">
-          Resultado: {resultado.toFixed(2)}
-        </p>
+        <p className="text-blue-800 font-semibold text-xl">Resultado: {resultado.toFixed(2)}</p>
       )}
     </div>
   );
