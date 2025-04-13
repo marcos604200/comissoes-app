@@ -4,7 +4,7 @@ interface Props {
 }
 
 export default function ResultadoSimulacao({ camposBase, formula }: Props) {
-  const dadosSimulados: Record<string, number> = {
+  const dadosSimulados = {
     frete: 12000,
     armazenagem: 3000,
     pedagio: 800,
@@ -14,7 +14,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
   const substituirFuncoesAvancadas = (input: string) => {
     return input
       .replace(/SOMASE\(([^,]+),([^,]+),([^\)]+)\)/gi, (_, intervalo, criterio, soma) => {
-        return `${soma}.filter((_, i: number) => ${intervalo}[i] === ${criterio}).reduce((a: number, b: number) => a + b, 0)`;
+        return `${soma}.filter((_, i) => ${intervalo}[i] === ${criterio}).reduce((a, b) => a + b, 0)`;
       })
       .replace(/SOMASES\(([^\)]+)\)/gi, (_, args) => {
         const partes = args.split(",").map((p: string) => p.trim());
@@ -22,13 +22,13 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
         for (let i = 0; i < partes.length - 1; i += 2) {
           condicoes.push(`(${partes[i]}[i] === ${partes[i + 1]})`);
         }
-        return `${partes.at(-1)}.filter((_, i: number) => ${condicoes.join(" && ")}).reduce((a: number, b: number) => a + b, 0)`;
+        return `${partes.at(-1)}.filter((_, i) => ${condicoes.join(" && ")}).reduce((a, b) => a + b, 0)`;
       })
       .replace(/PROCV\(([^,]+),([^,]+),([^\)]+)\)/gi, (_, valor, matriz, coluna) => {
-        return `${matriz}.find((r: any[]) => r[0] === ${valor})?.[${coluna} - 1] ?? 0`;
+        return `${matriz}.find(r => r[0] === ${valor})?.[${coluna} - 1] ?? 0`;
       })
       .replace(/CONT\.SE\(([^,]+),([^\)]+)\)/gi, (_, intervalo, criterio) => {
-        return `${intervalo}.filter((v: any) => v === ${criterio}).length`;
+        return `${intervalo}.filter(v => v === ${criterio}).length`;
       })
       .replace(/CONT\.SES\(([^\)]+)\)/gi, (_, args) => {
         const partes = args.split(",").map((p: string) => p.trim());
@@ -36,7 +36,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
         for (let i = 0; i < partes.length; i += 2) {
           condicoes.push(`(${partes[i]}[i] === ${partes[i + 1]})`);
         }
-        return `${partes[0]}.filter((_, i: number) => ${condicoes.join(" && ")}).length`;
+        return `${partes[0]}.filter((_, i) => ${condicoes.join(" && ")}).length`;
       })
       .replace(/ÍNDICE\(([^,]+),([^\)]+)\)/gi, (_, array, linha) => {
         return `${array}[${linha} - 1]`;
@@ -45,12 +45,12 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
         return `${intervalo}.indexOf(${valor}) + 1`;
       })
       .replace(/MÉDIA\(([^\)]+)\)/gi, (_, valores) => {
-        return `(${valores}.reduce((a: number, b: number) => a + b, 0) / ${valores}.length)`;
+        return `(${valores}.reduce((a, b) => a + b, 0) / ${valores}.length)`;
       })
       .replace(/DESVPAD\(([^\)]+)\)/gi, (_, valores) => {
         return `(() => {
-          const m = ${valores}.reduce((a: number, b: number) => a + b, 0) / ${valores}.length;
-          return Math.sqrt(${valores}.map((v: number) => Math.pow(v - m, 2)).reduce((a: number, b: number) => a + b, 0) / ${valores}.length);
+          const m = ${valores}.reduce((a, b) => a + b, 0) / ${valores}.length;
+          return Math.sqrt(${valores}.map(v => Math.pow(v - m, 2)).reduce((a, b) => a + b, 0) / ${valores}.length);
         })()`;
       })
       .replace(/MÍNIMO\(([^\)]+)\)/gi, (_, valores) => {
@@ -80,8 +80,10 @@ export default function ResultadoSimulacao({ camposBase, formula }: Props) {
   let erro = null;
 
   try {
-    const jsFormula = formulaInterpretada.replace(/^=/, "");
-    resultadoFinal = Function("\"use strict\"; return (" + jsFormula + ")")();
+    const jsFormula = formulaInterpretada
+      .replace(/^=/, "");
+
+    resultadoFinal = Function(`"use strict"; return (${jsFormula})`)();
   } catch (e) {
     erro = "Erro ao interpretar a fórmula. Verifique a sintaxe.";
   }
