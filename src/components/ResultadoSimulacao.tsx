@@ -19,7 +19,7 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
       "ct-e": 800,
       guia: 150,
       seguro: 120,
-      agenciamento: 400
+      agenciamento: 400,
     };
 
     try {
