@@ -95,9 +95,9 @@ export default function ConstrutorRegras() {
   };
 
   const excluirRegra = async (id: number) => {
-    await supabase.from("regras_comissao").delete().eq("id", id);
-    buscarRegras();
-  };
+  await supabase.from("regras_comissao").delete().eq("id", id);
+  buscarRegras();
+};
 
   useEffect(() => {
     buscarRegras();
