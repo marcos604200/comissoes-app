@@ -32,7 +32,8 @@ export default function ConstrutorRegras() {
     { label: "MÍNIMO", exemplo: "=MÍNIMO(valor1, valor2, ...)" },
     { label: "MÁXIMO", exemplo: "=MÁXIMO(valor1, valor2, ...)" },
     { label: "ABS", exemplo: "=ABS(valor)" },
-    { label: "ARRED", exemplo: "=ARRED(valor, casas_decimais)" }
+    { label: "ARRED", exemplo: "=ARRED(valor, casas_decimais)" },
+    { label: "RECEITA", exemplo: '=RECEITA("joao", "frete")' }
   ];
 
   const adicionarCampo = (campo: string) => {
@@ -42,11 +43,7 @@ export default function ConstrutorRegras() {
   };
 
   const salvarRegra = async () => {
-    const novaRegra = {
-      nome,
-      camposBase,
-      formula
-    };
+    const novaRegra = { nome, camposBase, formula };
     const { error } = await supabase.from("regras_comissao").insert([novaRegra]);
     if (!error) {
       buscarRegras();
@@ -57,7 +54,10 @@ export default function ConstrutorRegras() {
   };
 
   const buscarRegras = async () => {
-    const { data } = await supabase.from("regras_comissao").select("id, nome, camposBase, formula").order("id", { ascending: false });
+    const { data } = await supabase
+      .from("regras_comissao")
+      .select("id, nome, camposBase, formula")
+      .order("id", { ascending: false });
     setRegrasSalvas(data ?? []);
   };
 
@@ -103,13 +103,11 @@ export default function ConstrutorRegras() {
             ))}
           </div>
 
-          <div className="mt-2">
-            {camposBase.length > 0 && (
-              <p className="text-sm text-gray-600">
-                Selecionados: {camposBase.join(", ")}
-              </p>
-            )}
-          </div>
+          {camposBase.length > 0 && (
+            <p className="text-sm text-gray-600 mt-2">
+              Selecionados: {camposBase.join(", ")}
+            </p>
+          )}
 
           <label className="block font-bold mt-4">Fórmula</label>
           <input
