@@ -1,10 +1,10 @@
-import Layout from "@/components/Layout";
+import MainLayout from "@/layouts/MainLayout";
 import InterfaceSimulacao from "@/components/InterfaceSimulacao";
 
-export default function Simulacao() {
+export default function SimulacaoPage() {
   return (
-    <Layout>
+    <MainLayout>
       <InterfaceSimulacao />
-    </Layout>
+    </MainLayout>
   );
 }
