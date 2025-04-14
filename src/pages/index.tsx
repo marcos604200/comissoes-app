@@ -1,9 +1,10 @@
-import Layout from "@/components/ui/Layout";
+import Layout from "@/components/Layout";
+import InterfaceSimulacao from "@/components/InterfaceSimulacao";
 
 export default function Home() {
   return (
     <Layout>
-      <div className="text-2xl font-bold">Bem-vindo ao Sistema de Comissões</div>
+      <InterfaceSimulacao />
     </Layout>
   );
 }
