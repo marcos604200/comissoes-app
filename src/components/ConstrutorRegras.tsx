@@ -1,9 +1,11 @@
-import { useEffect, useState, ChangeEvent } from "react";
-import { supabase } from "@/utils/supabase";
-import ResultadoSimulacao from "./ResultadoSimulacao";
+// src/components/ConstrutorRegras.tsx
+
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/utils/supabase";
+import ResultadoSimulacao from "./ResultadoSimulacao";
 
 interface RegraComissao {
   id?: string;
@@ -19,15 +21,25 @@ export default function ConstrutorRegras() {
   const [regrasSalvas, setRegrasSalvas] = useState<RegraComissao[]>([]);
   const [simular, setSimular] = useState(false);
   const [tiposReceita, setTiposReceita] = useState<string[]>([]);
+  const [colaboradores, setColaboradores] = useState<string[]>([]);
 
   const funcoesDisponiveis = [
     { label: "SOMA", exemplo: "=frete + pedagio" },
     { label: "SE", exemplo: "=SE(frete > 1000, 10, 5)" },
+    { label: "SOMASE", exemplo: "=SOMASE(intervalo, criterio, soma)" },
+    { label: "SOMASES", exemplo: "=SOMASES(campo1, crit1, campo2, crit2, ..., campo_soma)" },
+    { label: "PROCV", exemplo: "=PROCV(valor, matriz, coluna)" },
+    { label: "CONT.SE", exemplo: "=CONT.SE(intervalo, criterio)" },
+    { label: "CONT.SES", exemplo: "=CONT.SES(campo1, crit1, campo2, crit2)" },
+    { label: "ÍNDICE", exemplo: "=ÍNDICE(intervalo, posição)" },
+    { label: "CORRESP", exemplo: "=CORRESP(valor, intervalo)" },
     { label: "MÉDIA", exemplo: "=MÉDIA(valor1, valor2, ...)" },
     { label: "DESVPAD", exemplo: "=DESVPAD(valor1, valor2, ...)" },
     { label: "MÍNIMO", exemplo: "=MÍNIMO(valor1, valor2, ...)" },
     { label: "MÁXIMO", exemplo: "=MÁXIMO(valor1, valor2, ...)" },
-    { label: "RECEITA", exemplo: '=RECEITA("João", "frete")' },
+    { label: "ABS", exemplo: "=ABS(valor)" },
+    { label: "ARRED", exemplo: "=ARRED(valor, casas_decimais)" },
+    { label: "RECEITA", exemplo: "=RECEITA(\"João\", \"frete\")" },
   ];
 
   const adicionarCampo = (campo: string) => {
@@ -37,7 +49,11 @@ export default function ConstrutorRegras() {
   };
 
   const salvarRegra = async () => {
-    const novaRegra = { nome, camposBase, formula };
+    const novaRegra = {
+      nome,
+      camposBase,
+      formula,
+    };
     const { error } = await supabase.from("regras_comissao").insert([novaRegra]);
     if (!error) {
       buscarRegras();
@@ -53,9 +69,16 @@ export default function ConstrutorRegras() {
   };
 
   const buscarTiposReceita = async () => {
-    const { data, error } = await supabase.from("tipos_receita").select("descricao").order("descricao");
-    if (data && !error) {
+    const { data } = await supabase.from("tipos_receita").select("descricao").order("descricao");
+    if (data) {
       setTiposReceita(data.map((r) => r.descricao));
+    }
+  };
+
+  const buscarColaboradores = async () => {
+    const { data } = await supabase.from("colaboradores").select("nome").order("nome");
+    if (data) {
+      setColaboradores(data.map((c) => c.nome));
     }
   };
 
@@ -67,55 +90,64 @@ export default function ConstrutorRegras() {
   useEffect(() => {
     buscarRegras();
     buscarTiposReceita();
+    buscarColaboradores();
   }, []);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardContent className="space-y-4 p-4">
-            <Input placeholder="Nome da Regra" value={nome} onChange={(e) => setNome(e.target.value)} />
-            <div>
-              <p className="font-medium">Campos disponíveis:</p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {tiposReceita.map((campo) => (
-                  <Button key={campo} variant="outline" size="sm" onClick={() => adicionarCampo(campo)}>
-                    {campo}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <Input
-              type="text"
-              value={formula}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setFormula(e.target.value)}
-              placeholder='Ex: =frete * 0.1 + RECEITA("João", "frete")'
-            />
-            <div className="flex gap-2">
-              <Button className="bg-green-600 text-white" onClick={salvarRegra}>Salvar</Button>
-              <Button className="bg-purple-600 text-white" onClick={() => setSimular(true)}>Simular</Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-bold">Nome da Regra</label>
+          <Input value={nome} onChange={(e) => setNome(e.target.value)} />
 
-        <Card>
-          <CardContent className="p-4">
-            <h4 className="font-semibold mb-2">📚 Funções Disponíveis</h4>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {funcoesDisponiveis.map((f) => (
-                <li key={f.label}><strong>{f.label}:</strong> <code>{f.exemplo}</code></li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+          <label className="block font-bold mt-4">Campos Base (clique para adicionar)</label>
+          <div className="flex flex-wrap gap-2">
+            {tiposReceita.map((campo) => (
+              <Button key={campo} onClick={() => adicionarCampo(campo)}>{campo}</Button>
+            ))}
+          </div>
+
+          <div className="mt-2">
+            {camposBase.length > 0 && (
+              <p className="text-sm text-gray-600">Selecionados: {camposBase.join(", ")}</p>
+            )}
+          </div>
+
+          <label className="block font-bold mt-4">Fórmula</label>
+          <Input
+            value={formula}
+            onChange={(e) => setFormula(e.target.value)}
+            placeholder='Exemplo: =frete * 0.1 + RECEITA("João", "frete")'
+          />
+
+          <div className="flex gap-2 mt-4">
+            <Button onClick={salvarRegra}>Salvar Regra</Button>
+            <Button variant="secondary" onClick={() => setSimular(true)}>Simular</Button>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-bold mb-2">📌 Funções Disponíveis</h3>
+          <ul className="list-disc list-inside text-sm">
+            {funcoesDisponiveis.map((f) => (
+              <li key={f.label} title={f.label} className="hover:underline cursor-help">
+                <strong>{f.label}</strong>: <code>{f.exemplo}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {simular && formula && (
-        <ResultadoSimulacao camposBase={camposBase} formula={formula} />
+        <Card className="mt-8">
+          <CardContent>
+            <ResultadoSimulacao camposBase={camposBase} formula={formula} />
+          </CardContent>
+        </Card>
       )}
 
-      <div>
-        <h3 className="text-lg font-bold mb-2">📂 Regras Salvas</h3>
+      <div className="mt-10">
+        <h3 className="font-bold text-lg mb-2">📂 Regras Salvas</h3>
         {regrasSalvas.length === 0 ? (
           <p className="text-sm text-gray-500">Nenhuma regra cadastrada.</p>
         ) : (
@@ -129,7 +161,9 @@ export default function ConstrutorRegras() {
                     Fórmula: <code>{regra.formula}</code>
                   </p>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => excluirRegra(regra.id!)}>Excluir</Button>
+                <Button variant="ghost" onClick={() => excluirRegra(regra.id!)} className="text-red-600 text-sm">
+                  Excluir
+                </Button>
               </li>
             ))}
           </ul>
