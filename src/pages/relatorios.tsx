@@ -3,10 +3,11 @@ import { DashboardComissoes } from "@/components/DashboardComissoes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/utils/supabase";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
 
 interface ResultadoComissao {
   id: number;
@@ -23,6 +24,7 @@ export default function Relatorios() {
   const [resultados, setResultados] = useState<ResultadoComissao[]>([]);
   const [filtroEscritorio, setFiltroEscritorio] = useState("");
   const [filtroColaborador, setFiltroColaborador] = useState("");
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const buscarResultados = async () => {
@@ -44,12 +46,18 @@ export default function Relatorios() {
     );
   });
 
-  const exportarPDF = () => {
+  const exportarPDF = async () => {
     const doc = new jsPDF();
     doc.text("Relatório de Comissões", 14, 16);
 
+    if (dashboardRef.current) {
+      const canvas = await html2canvas(dashboardRef.current);
+      const imgData = canvas.toDataURL("image/png");
+      doc.addImage(imgData, "PNG", 14, 22, 180, 80);
+    }
+
     autoTable(doc, {
-      startY: 22,
+      startY: 110,
       head: [["Colaborador", "Escritório", "Receita", "Valor Receita", "Valor Comissão", "Regra", "Data"]],
       body: resultadosFiltrados.map((r) => [
         r.colaborador,
@@ -86,7 +94,9 @@ export default function Relatorios() {
           />
         </div>
 
-        <DashboardComissoes resultados={resultadosFiltrados} />
+        <div ref={dashboardRef}>
+          <DashboardComissoes resultados={resultadosFiltrados} />
+        </div>
 
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {resultadosFiltrados.map((r) => (
