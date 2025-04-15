@@ -47,13 +47,13 @@ export default function ImportarComissoes() {
           {dados.map((item, i) => (
             <Card key={i}>
               <CardContent className="p-4">
-                <p><strong>Escritório:</strong> {item.Escritório}</p>
-                <p><strong>Colaborador:</strong> {item.Colaborador}</p>
+                <p><strong>Escritório:</strong> {item["Escritório"]}</p>
+                <p><strong>Colaborador:</strong> {item["Colaborador"]}</p>
                 <p><strong>Tipo Receita:</strong> {item["Tipo Receita"]}</p>
                 <p><strong>Valor Receita:</strong> R$ {item["Valor Receita"]}</p>
-                <p><strong>Documento:</strong> {item.Documento}</p>
-                <p><strong>Emitente:</strong> {item.Emitente}</p>
-                <p><strong>Cliente:</strong> {item.Cliente}</p>
+                <p><strong>Documento:</strong> {item["Documento"]}</p>
+                <p><strong>Emitente:</strong> {item["Emitente"]}</p>
+                <p><strong>Cliente:</strong> {item["Cliente"]}</p>
                 <p><strong>Data Emissão:</strong> {item["Data Emissão"]}</p>
               </CardContent>
             </Card>
