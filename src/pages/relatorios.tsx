@@ -2,8 +2,11 @@ import Layout from "@/components/Layout";
 import { DashboardComissoes } from "@/components/DashboardComissoes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabase";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface ResultadoComissao {
   id: number;
@@ -41,10 +44,34 @@ export default function Relatorios() {
     );
   });
 
+  const exportarPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Relatório de Comissões", 14, 16);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [["Colaborador", "Escritório", "Receita", "Valor Receita", "Valor Comissão", "Regra", "Data"]],
+      body: resultadosFiltrados.map((r) => [
+        r.colaborador,
+        r.escritorio,
+        r.tipo_receita,
+        `R$ ${r.valor_receita.toFixed(2)}`,
+        `R$ ${r.valor_comissao.toFixed(2)}`,
+        r.regra_aplicada,
+        new Date(r.data_emissao).toLocaleDateString(),
+      ])
+    });
+
+    doc.save("relatorio_comissoes.pdf");
+  };
+
   return (
     <Layout>
       <main className="flex-1 p-6 space-y-8">
-        <h1 className="text-2xl font-bold">📊 Relatórios de Comissão</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">📊 Relatórios de Comissão</h1>
+          <Button onClick={exportarPDF}>Exportar PDF</Button>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-4">
           <Input
