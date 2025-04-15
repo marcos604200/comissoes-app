@@ -1,31 +1,22 @@
 import Layout from "@/components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-interface Receita {
-  id: string;
-  descricao: string;
-}
-
 export default function Receitas() {
   const [descricao, setDescricao] = useState("");
-  const [receitas, setReceitas] = useState<Receita[]>([]);
-
-  useEffect(() => {
-    buscarReceitas();
-  }, []);
+  const [receitas, setReceitas] = useState<any[]>([]);
 
   const buscarReceitas = async () => {
-    const { data, error } = await supabase.from("tipos_receita").select("id, descricao").order("descricao");
-    if (!error) setReceitas(data);
+    const { data } = await supabase.from("tipos_receita").select("*").order("descricao");
+    setReceitas(data ?? []);
   };
 
   const salvarReceita = async () => {
-    if (!descricao.trim()) return;
-    await supabase.from("tipos_receita").insert({ descricao });
+    if (!descricao) return;
+    await supabase.from("tipos_receita").insert([{ descricao }]);
     setDescricao("");
     buscarReceitas();
   };
@@ -35,29 +26,37 @@ export default function Receitas() {
     buscarReceitas();
   };
 
+  useEffect(() => {
+    buscarReceitas();
+  }, []);
+
   return (
     <Layout>
-      <main className="flex-1 p-6 space-y-6">
-        <h1 className="text-2xl font-bold">🍽️ Cadastro de Tipos de Receita</h1>
+      <main className="flex-1 p-6">
+        <h1 className="text-2xl font-bold mb-4">📑 Cadastro de Tipos de Receita</h1>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 mb-6">
           <Input
-            placeholder="Ex: Frete, Armazenagem, Seguro..."
+            type="text"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
-            className="w-full"
+            placeholder="Descrição da receita"
           />
           <Button onClick={salvarReceita} className="bg-green-600 text-white">
-            ➕ Salvar
+            ➕ Cadastrar
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {receitas.map((r) => (
-            <Card key={r.id} className="bg-white border shadow-sm">
+            <Card key={r.id}>
               <CardContent className="p-4 flex justify-between items-center">
-                <span className="text-sm font-semibold">{r.descricao}</span>
-                <Button onClick={() => excluirReceita(r.id)} className="text-red-600 text-xs" variant="ghost">
+                <span>{r.descricao}</span>
+                <Button
+                  variant="outline"
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                  onClick={() => excluirReceita(r.id)}
+                >
                   Excluir
                 </Button>
               </CardContent>
@@ -68,4 +67,3 @@ export default function Receitas() {
     </Layout>
   );
 }
-
