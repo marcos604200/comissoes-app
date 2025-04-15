@@ -1,5 +1,8 @@
+// src/components/ResultadoSimulacao.tsx
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface ResultadoSimulacaoProps {
   camposBase: string[];
@@ -59,10 +62,34 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
     setDependencias({ ...dependencias, [chave]: parseFloat(valor) || 0 });
   };
 
+  const gerarPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Memória de Cálculo da Comissão", 14, 16);
+
+    autoTable(doc, {
+      head: [["Campo", "Valor"]],
+      body: [...Object.entries(dadosSimulados), ...Object.entries(dependencias)].map(([key, value]) => [key, value.toFixed(2)]),
+      startY: 24,
+    });
+
+    doc.text(`Fórmula: ${formula}`, 14, doc.autoTable.previous.finalY + 10);
+    doc.text(`Resultado: R$ ${resultado?.toFixed(2) ?? "Erro"}`, 14, doc.autoTable.previous.finalY + 20);
+
+    doc.save("relatorio-comissao.pdf");
+  };
+
   return (
     <Card className="mt-6">
       <CardContent className="space-y-4">
-        <h2 className="text-lg font-semibold">🔍 Resultado da Simulação</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">🔍 Resultado da Simulação</h2>
+          <button
+            onClick={gerarPDF}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Exportar PDF
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {camposBase.map((campo) => (
@@ -97,7 +124,9 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
 
         <div className="pt-4 border-t">
           <p className="text-gray-600">Fórmula: <code>{formula}</code></p>
-          <p className="text-xl font-bold text-green-600">Resultado: {resultado !== null ? `R$ ${resultado.toFixed(2)}` : "Erro na fórmula"}</p>
+          <p className="text-xl font-bold text-green-600">
+            Resultado: {resultado !== null ? `R$ ${resultado.toFixed(2)}` : "Erro na fórmula"}
+          </p>
         </div>
       </CardContent>
     </Card>
