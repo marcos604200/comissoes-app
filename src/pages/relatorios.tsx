@@ -12,12 +12,14 @@ export default function Relatorios() {
   const [relatorio, setRelatorio] = useState<any[]>([]);
   const [colaboradores, setColaboradores] = useState<string[]>([]);
   const [regras, setRegras] = useState<string[]>([]);
-  const [filtros, setFiltros] = useState({ colaborador: "", regra: "", periodo: "" });
+  const [escritorios, setEscritorios] = useState<string[]>([]);
+  const [filtros, setFiltros] = useState({ colaborador: "", regra: "", escritorio: "", periodo: "" });
 
   useEffect(() => {
     buscarRelatorios();
     buscarColaboradores();
     buscarRegras();
+    buscarEscritorios();
   }, []);
 
   const buscarRelatorios = async () => {
@@ -35,13 +37,18 @@ export default function Relatorios() {
     setRegras(data?.map((r) => r.nome) ?? []);
   };
 
+  const buscarEscritorios = async () => {
+    const { data } = await supabase.from("escritorios").select("nome");
+    setEscritorios(data?.map((e) => e.nome) ?? []);
+  };
+
   const exportarPDF = () => {
     const doc = new jsPDF();
     doc.text("Relatório de Comissões", 14, 16);
     autoTable(doc, {
       startY: 22,
-      head: [["Colaborador", "Regra", "Valor", "Período"]],
-      body: relatorioFiltrado.map((item) => [item.colaborador, item.regra, item.valor, item.periodo])
+      head: [["Colaborador", "Regra", "Escritório", "Valor", "Período"]],
+      body: relatorioFiltrado.map((item) => [item.colaborador, item.regra, item.escritorio, item.valor, item.periodo])
     });
     doc.save("relatorio-comissoes.pdf");
   };
@@ -51,6 +58,7 @@ export default function Relatorios() {
     return (
       (!f.colaborador || item.colaborador === f.colaborador) &&
       (!f.regra || item.regra === f.regra) &&
+      (!f.escritorio || item.escritorio === f.escritorio) &&
       (!f.periodo || item.periodo.includes(f.periodo))
     );
   });
@@ -60,7 +68,7 @@ export default function Relatorios() {
       <main className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-4">📄 Relatórios de Comissão</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Select label="Colaborador" value={filtros.colaborador} onChange={(e) => setFiltros({ ...filtros, colaborador: e.target.value })}>
             <option value="">Todos</option>
             {colaboradores.map((nome) => (
@@ -71,6 +79,13 @@ export default function Relatorios() {
           <Select label="Regra" value={filtros.regra} onChange={(e) => setFiltros({ ...filtros, regra: e.target.value })}>
             <option value="">Todas</option>
             {regras.map((nome) => (
+              <option key={nome}>{nome}</option>
+            ))}
+          </Select>
+
+          <Select label="Escritório" value={filtros.escritorio} onChange={(e) => setFiltros({ ...filtros, escritorio: e.target.value })}>
+            <option value="">Todos</option>
+            {escritorios.map((nome) => (
               <option key={nome}>{nome}</option>
             ))}
           </Select>
@@ -89,6 +104,7 @@ export default function Relatorios() {
               <CardContent className="p-4">
                 <p><strong>Colaborador:</strong> {item.colaborador}</p>
                 <p><strong>Regra:</strong> {item.regra}</p>
+                <p><strong>Escritório:</strong> {item.escritorio}</p>
                 <p><strong>Valor:</strong> R$ {item.valor}</p>
                 <p><strong>Período:</strong> {item.periodo}</p>
               </CardContent>
