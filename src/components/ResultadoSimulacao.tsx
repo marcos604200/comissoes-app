@@ -1,4 +1,3 @@
-// src/components/ResultadoSimulacao.tsx
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 
@@ -10,9 +9,9 @@ interface ResultadoSimulacaoProps {
 export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSimulacaoProps) {
   const [resultado, setResultado] = useState<number | null>(null);
   const [dadosSimulados, setDadosSimulados] = useState<Record<string, number>>({});
+  const [dependencias, setDependencias] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    // Funções auxiliares para parsing
     const parseFormula = (input: string): string => {
       return input
         .replace(/=+/g, "")
@@ -31,6 +30,12 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
         .replace(/SE\(([^,]+),([^,]+),([^)]+)\)/gi, (_, cond, vTrue, vFalse) => {
           return eval(cond) ? vTrue.trim() : vFalse.trim();
         })
+        .replace(/PROCV\(([^,]+),([^,]+),([^,]+)\)/gi, (_, valor, matriz, coluna) => {
+          return "0"; // Implementação futura
+        })
+        .replace(/DEPENDENCIA\("([^"]+)",\s*"([^"]+)"\)/gi, (_, colaborador, campo) => {
+          return String(dependencias[`${colaborador}_${campo}`] ?? 0);
+        })
         .replace(/\[([^\]]+)\]/g, (_, campo) => {
           return String(dadosSimulados[campo] ?? 0);
         });
@@ -43,10 +48,15 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
     } catch (error) {
       setResultado(null);
     }
-  }, [dadosSimulados, formula]);
+  }, [dadosSimulados, dependencias, formula]);
 
   const handleChange = (campo: string, valor: string) => {
     setDadosSimulados({ ...dadosSimulados, [campo]: parseFloat(valor) || 0 });
+  };
+
+  const handleDependenciaChange = (colaborador: string, campo: string, valor: string) => {
+    const chave = `${colaborador}_${campo}`;
+    setDependencias({ ...dependencias, [chave]: parseFloat(valor) || 0 });
   };
 
   return (
@@ -66,6 +76,23 @@ export default function ResultadoSimulacao({ camposBase, formula }: ResultadoSim
               />
             </div>
           ))}
+        </div>
+
+        <h3 className="text-md font-semibold mt-6">📎 Dependências entre Colaboradores</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {["João", "Maria"].flatMap((colab) =>
+            camposBase.map((campo) => (
+              <div key={`${colab}_${campo}`}>
+                <label className="text-sm text-gray-700">{`${colab} - ${campo}`}</label>
+                <input
+                  type="number"
+                  value={dependencias[`${colab}_${campo}`] ?? ""}
+                  onChange={(e) => handleDependenciaChange(colab, campo, e.target.value)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+            ))
+          )}
         </div>
 
         <div className="pt-4 border-t">
