@@ -1,61 +1,49 @@
-import { useState, useEffect } from "react";
-import { Input } from "./Input";
-import { Button } from "./Button";
-import { Card, CardContent } from "./Card";
-import { Select } from "./Select";
-import { supabase } from "@/utils/supabase";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import ResultadoSimulacao from "./ResultadoSimulacao";
 
 export default function InterfaceSimulacao() {
-  const [nome, setNome] = useState("");
-  const [formula, setFormula] = useState("");
-  const [tiposReceita, setTiposReceita] = useState<string[]>([]);
-  const [colaboradores, setColaboradores] = useState<string[]>([]);
-
-  const salvar = async () => {
-    if (!nome || !formula) return;
-    await supabase.from("regras_comissao").insert([{ nome, formula }]);
-    setNome("");
-    setFormula("");
-  };
-
-  const buscarDados = async () => {
-    const { data: receitas } = await supabase.from("tipos_receita").select("descricao");
-    const { data: colaboradores } = await supabase.from("colaboradores").select("nome");
-    setTiposReceita(receitas?.map((r) => r.descricao) || []);
-    setColaboradores(colaboradores?.map((c) => c.nome) || []);
-  };
-
-  useEffect(() => {
-    buscarDados();
-  }, []);
+  const [frete, setFrete] = useState(0);
+  const [guia, setGuia] = useState(0);
+  const [taxa, setTaxa] = useState(0);
+  const [formula, setFormula] = useState("=frete * 0.1 + guia * 0.05");
+  const [executar, setExecutar] = useState(false);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <Card>
-        <CardContent>
-          <h2 className="text-xl font-bold">🔧 Criar Regra de Comissão</h2>
-          <div className="space-y-2">
-            <Input placeholder="Nome da Regra" value={nome} onChange={(e) => setNome(e.target.value)} />
-            <Input placeholder='Ex: =frete * 0.1 + RECEITA("João", "frete")' value={formula} onChange={(e) => setFormula(e.target.value)} />
-            <div className="flex gap-2">
-              <Button onClick={salvar}>Salvar</Button>
-              <Button variant="outline">Simular</Button>
-            </div>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+          <div>
+            <label className="font-semibold">Frete</label>
+            <Input type="number" value={frete} onChange={(e) => setFrete(+e.target.value)} />
+          </div>
+          <div>
+            <label className="font-semibold">Guia</label>
+            <Input type="number" value={guia} onChange={(e) => setGuia(+e.target.value)} />
+          </div>
+          <div>
+            <label className="font-semibold">Taxa</label>
+            <Input type="number" value={taxa} onChange={(e) => setTaxa(+e.target.value)} />
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardContent>
-          <h3 className="text-lg font-semibold">📋 Funções Disponíveis</h3>
-          <ul className="text-sm list-disc list-inside">
-            <li>=SOMA(valor1, valor2)</li>
-            <li>=SE(condição, valor_se_verdadeiro, valor_se_falso)</li>
-            <li>=RECEITA("João", "frete")</li>
-            <li>=COLABORADOR("João", "meta")</li>
-          </ul>
+        <CardContent className="p-6 space-y-4">
+          <label className="font-semibold block">Fórmula de Comissão</label>
+          <Input value={formula} onChange={(e) => setFormula(e.target.value)} />
+          <Button onClick={() => setExecutar(true)}>Simular</Button>
         </CardContent>
       </Card>
+
+      {executar && (
+        <ResultadoSimulacao
+          camposBase={{ frete, guia, taxa }}
+          formula={formula}
+        />
+      )}
     </div>
   );
 }
