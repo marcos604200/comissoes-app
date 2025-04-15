@@ -1,122 +1,57 @@
 import Layout from "@/components/Layout";
+import { DashboardComissoes } from "@/components/DashboardComissoes";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { supabase } from "@/utils/supabase";
+
+interface ResultadoComissao {
+  id: number;
+  colaborador: string;
+  escritorio: string;
+  tipo_receita: string;
+  valor_receita: number;
+  valor_comissao: number;
+  regra_aplicada: string;
+  data_emissao: string;
+}
 
 export default function Relatorios() {
-  const [relatorio, setRelatorio] = useState<any[]>([]);
-  const [colaboradores, setColaboradores] = useState<string[]>([]);
-  const [regras, setRegras] = useState<string[]>([]);
-  const [escritorios, setEscritorios] = useState<string[]>([]);
-  const [filtros, setFiltros] = useState({ colaborador: "", regra: "", escritorio: "", periodo: "" });
+  const [resultados, setResultados] = useState<ResultadoComissao[]>([]);
 
   useEffect(() => {
-    buscarRelatorios();
-    buscarColaboradores();
-    buscarRegras();
-    buscarEscritorios();
+    const buscarResultados = async () => {
+      const { data, error } = await supabase
+        .from("comissoes_resultado")
+        .select("id, colaborador, escritorio, tipo_receita, valor_receita, valor_comissao, regra_aplicada, data_emissao")
+        .order("data_emissao", { ascending: false });
+
+      if (!error && data) setResultados(data);
+    };
+
+    buscarResultados();
   }, []);
-
-  const buscarRelatorios = async () => {
-    const { data } = await supabase.from("relatorios_comissao").select("*");
-    setRelatorio(data ?? []);
-  };
-
-  const buscarColaboradores = async () => {
-    const { data } = await supabase.from("colaboradores").select("nome");
-    setColaboradores(data?.map((c) => c.nome) ?? []);
-  };
-
-  const buscarRegras = async () => {
-    const { data } = await supabase.from("regras_comissao").select("nome");
-    setRegras(data?.map((r) => r.nome) ?? []);
-  };
-
-  const buscarEscritorios = async () => {
-    const { data } = await supabase.from("escritorios").select("nome");
-    setEscritorios(data?.map((e) => e.nome) ?? []);
-  };
-
-  const exportarPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Relatório de Comissões", 14, 16);
-    autoTable(doc, {
-      startY: 22,
-      head: [["Colaborador", "Regra", "Escritório", "Valor", "Período"]],
-      body: relatorioFiltrado.map((item) => [item.colaborador, item.regra, item.escritorio, item.valor, item.periodo])
-    });
-    doc.save("relatorio-comissoes.pdf");
-  };
-
-  const relatorioFiltrado = relatorio.filter((item) => {
-    const f = filtros;
-    return (
-      (!f.colaborador || item.colaborador === f.colaborador) &&
-      (!f.regra || item.regra === f.regra) &&
-      (!f.escritorio || item.escritorio === f.escritorio) &&
-      (!f.periodo || item.periodo.includes(f.periodo))
-    );
-  });
 
   return (
     <Layout>
-      <main className="flex-1 p-6">
-        <h1 className="text-2xl font-bold mb-4">📄 Relatórios de Comissão</h1>
+      <main className="flex-1 p-6 space-y-8">
+        <h1 className="text-2xl font-bold">📊 Relatórios de Comissão</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Select label="Colaborador" value={filtros.colaborador} onChange={(e) => setFiltros({ ...filtros, colaborador: e.target.value })}>
-            <option value="">Todos</option>
-            {colaboradores.map((nome) => (
-              <option key={nome}>{nome}</option>
-            ))}
-          </Select>
+        <DashboardComissoes />
 
-          <Select label="Regra" value={filtros.regra} onChange={(e) => setFiltros({ ...filtros, regra: e.target.value })}>
-            <option value="">Todas</option>
-            {regras.map((nome) => (
-              <option key={nome}>{nome}</option>
-            ))}
-          </Select>
-
-          <Select label="Escritório" value={filtros.escritorio} onChange={(e) => setFiltros({ ...filtros, escritorio: e.target.value })}>
-            <option value="">Todos</option>
-            {escritorios.map((nome) => (
-              <option key={nome}>{nome}</option>
-            ))}
-          </Select>
-
-          <Input
-            type="month"
-            value={filtros.periodo}
-            onChange={(e) => setFiltros({ ...filtros, periodo: e.target.value })}
-            placeholder="Filtrar por período"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {relatorioFiltrado.map((item, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <p><strong>Colaborador:</strong> {item.colaborador}</p>
-                <p><strong>Regra:</strong> {item.regra}</p>
-                <p><strong>Escritório:</strong> {item.escritorio}</p>
-                <p><strong>Valor:</strong> R$ {item.valor}</p>
-                <p><strong>Período:</strong> {item.periodo}</p>
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {resultados.map((r) => (
+            <Card key={r.id} className="bg-white shadow-sm">
+              <CardContent className="p-4 space-y-1">
+                <p><strong>Colaborador:</strong> {r.colaborador}</p>
+                <p><strong>Escritório:</strong> {r.escritorio}</p>
+                <p><strong>Receita:</strong> {r.tipo_receita} — R$ {r.valor_receita.toFixed(2)}</p>
+                <p><strong>Comissão:</strong> R$ {r.valor_comissao.toFixed(2)}</p>
+                <p><strong>Regra Aplicada:</strong> {r.regra_aplicada}</p>
+                <p className="text-sm text-gray-500">{new Date(r.data_emissao).toLocaleDateString()}</p>
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        <div className="text-right mt-6">
-          <Button onClick={exportarPDF} className="bg-indigo-600 text-white">
-            📄 Exportar PDF
-          </Button>
-        </div>
+        </section>
       </main>
     </Layout>
   );
