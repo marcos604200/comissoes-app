@@ -4,9 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { supabase } from "@/utils/supabase";
 
 export default function ImportarComissoes() {
   const [dados, setDados] = useState<any[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [mensagem, setMensagem] = useState("");
 
   const handleImportar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,6 +37,33 @@ export default function ImportarComissoes() {
     reader.readAsBinaryString(file);
   };
 
+  const salvarSupabase = async () => {
+    setCarregando(true);
+    const registros = dados.map((item) => ({
+      escritorio: item["Escritório"],
+      colaborador: item["Colaborador"],
+      tipo_receita: item["Tipo Receita"],
+      valor_receita: Number(item["Valor Receita"]),
+      documento: item["Documento"],
+      emitente: item["Emitente"],
+      cliente: item["Cliente"],
+      data_emissao: item["Data Emissão"]
+        ? new Date(item["Data Emissão"]).toISOString()
+        : null,
+    }));
+
+    const { error } = await supabase.from("comissoes_importadas").insert(registros);
+
+    if (error) {
+      setMensagem("Erro ao salvar: " + error.message);
+    } else {
+      setMensagem("Dados salvos com sucesso!");
+      setDados([]);
+    }
+
+    setCarregando(false);
+  };
+
   return (
     <Layout>
       <main className="flex-1 p-6">
@@ -42,6 +72,14 @@ export default function ImportarComissoes() {
         <div className="mb-4">
           <Input type="file" accept=".xlsx, .xls" onChange={handleImportar} />
         </div>
+
+        {dados.length > 0 && (
+          <Button onClick={salvarSupabase} disabled={carregando} className="mb-6">
+            {carregando ? "Salvando..." : "Salvar no banco de dados"}
+          </Button>
+        )}
+
+        {mensagem && <p className="text-sm text-green-600 mb-4">{mensagem}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {dados.map((item, i) => (
