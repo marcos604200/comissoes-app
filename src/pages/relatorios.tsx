@@ -1,9 +1,11 @@
-import Layout from "@/components/ui/Layout";
+import MainLayout from "@/layouts/MainLayout";
+import PainelRelatorio from "@/components/PainelRelatorio";
 
-export default function Relatorios() {
+export default function RelatoriosPage() {
   return (
-    <Layout>
-      <div className="text-xl font-semibold">Relatórios e Gráficos (em breve)</div>
-    </Layout>
+    <MainLayout>
+      <h1 className="text-2xl font-bold mb-4">📝 Relatórios de Comissões</h1>
+      <PainelRelatorio />
+    </MainLayout>
   );
 }
